@@ -28,6 +28,7 @@ def should_continue(state: AgentState):
 
 def llm_call(state: AgentState):
     """LLM decides whether to call a tool or not"""
+    print("--- Calling LLM Node ---")
 
     return {
         "messages": [
@@ -64,12 +65,25 @@ agent_builder.add_edge("tool_node", "llm_call")
 agent = agent_builder.compile()
 
 
-# from IPython.display import Image, display
-# display(Image(agent.get_graph(xray=True).draw_mermaid_png()))
+import os
+
+# Capture the raw PNG data
+png_data = agent.get_graph(xray=True).draw_mermaid_png()
+
+# Define the filename and path where you want to save it
+output_filename = "graph_diagram.png" # Saves in the current working directory
+
+# Open the file in binary write mode ('wb') and write the data
+try:
+    with open(output_filename, 'wb') as f:
+        f.write(png_data)
+    print(f"Graph diagram saved successfully as '{output_filename}'")
+except Exception as e:
+    print(f"Error saving file: {e}")
 
 
 # --- 5. Run the Graph ---
-inputs: AgentState = {"messages": [HumanMessage(content= "add 10 and 3 then add 1")]}
+inputs: AgentState = {"messages": [HumanMessage(content= "add 10 and 3 ")]}
 final_state = agent.invoke(inputs)
 print(f"AI: {final_state['messages'][-1].content}")
 
