@@ -6,6 +6,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from settings import MODEL_API_KEY
 from tool_node import model_with_tools, tool_node
+import asyncio
 
 
 llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=1, google_api_key=MODEL_API_KEY)
@@ -65,25 +66,27 @@ agent_builder.add_edge("tool_node", "llm_call")
 agent = agent_builder.compile()
 
 
-import os
+# import os
 
-# Capture the raw PNG data
-png_data = agent.get_graph(xray=True).draw_mermaid_png()
+# # Capture the raw PNG data
+# png_data = agent.get_graph(xray=True).draw_mermaid_png()
 
-# Define the filename and path where you want to save it
-output_filename = "graph_diagram.png" # Saves in the current working directory
+# # Define the filename and path where you want to save it
+# output_filename = "graph_diagram.png" # Saves in the current working directory
 
 # Open the file in binary write mode ('wb') and write the data
-try:
-    with open(output_filename, 'wb') as f:
-        f.write(png_data)
-    print(f"Graph diagram saved successfully as '{output_filename}'")
-except Exception as e:
-    print(f"Error saving file: {e}")
+# try:
+#     with open(output_filename, 'wb') as f:
+#         f.write(png_data)
+#     print(f"Graph diagram saved successfully as '{output_filename}'")
+# except Exception as e:
+#     print(f"Error saving file: {e}")
 
 
-# --- 5. Run the Graph ---
-inputs: AgentState = {"messages": [HumanMessage(content= "add 10 and 3 ")]}
-final_state = agent.invoke(inputs)
-print(f"AI: {final_state['messages'][-1].content}")
+async def main():
+    inputs: AgentState = {"messages": [HumanMessage(content= "add 20 and 30 ")]}
+    final_state = agent.invoke(inputs)
+    print(f"AI: {final_state['messages'][-1].content}")
 
+    
+asyncio.run(main())

@@ -2,6 +2,8 @@ from langchain_core.messages import ToolMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.tools import tool
 from settings import MODEL_API_KEY
+from mcp_client import initialize_client, list_tools,invoke_tool
+import json
 
 model = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
@@ -10,46 +12,25 @@ model = ChatGoogleGenerativeAI(
 )
 
 
-@tool
-def multiply(a: int, b: int) -> int:
-    """Multiply `a` and `b`.
+_, session_id = initialize_client()
+print(f"Initialized. Session ID: {session_id}")
 
-    Args:
-        a: First int
-        b: Second int
-    """
-    print(f"Multiplying {a} and {b}")
-    return a * b
+# 2. List Tools
+tools_response = list_tools(session_id)
+print("Available tools:", json.dumps(tools_response, indent=2))
 
-@tool
-def add(a: int, b: int) -> int:
-    """Adds `a` and `b`.
-
-    Args:
-        a: First int
-        b: Second int
-    """
-    
-    return a + b
-
-
-@tool
-def divide(a: int, b: int) -> float:
-    """Divide `a` and `b`.
-
-    Args:
-        a: First int
-        b: Second int
-    """
-    print(f"Dividing {a} by {b}")
-    return a / b
-
+mcp_tools = tools_response["result"]["tools"]
 
 # Augment the LLM with tools
-tools = [add, multiply, divide]
-tools_by_name = {tool.name: tool for tool in tools}
-# print(tools_by_name)
-model_with_tools = model.bind_tools(tools)
+tools_by_name = [
+    {
+        "name": tool["name"],
+        "description": tool["description"],
+        "parameters": tool["inputSchema"],
+    }
+    for tool in mcp_tools
+]
+model_with_tools = model.bind_tools(tools_by_name)
 
 # tools_by_name dictionary will look like this:
 """
@@ -67,9 +48,7 @@ def tool_node(state: dict):
     result = []
     # print(f"Tool Calls: {state['messages']}")
     for tool_call in state["messages"][-1].tool_calls:
-        
-        tool = tools_by_name[tool_call["name"]]  
-        observation = tool.invoke(tool_call["args"])
+        observation = invoke_tool(session_id, tool_call["name"], tool_call["args"])
         result.append(ToolMessage(content=observation, tool_call_id=tool_call["id"]))
     return {"messages": result}
 
